@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/lod2.js": { "maxDuration": 60, "memory": 1769 }
+  }
+}

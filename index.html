@@ -141,16 +141,28 @@ dialog textarea{font-family:ui-monospace,Consolas,monospace;font-size:12px}
 .aerload{display:flex;justify-content:center;cursor:pointer;margin:6px 0}
 .aerload input{display:none}
 #aerAlign[aria-pressed="true"]{background:var(--sun);color:var(--sunInk);border-color:transparent}
-.online{background:var(--field);border-radius:12px;padding:10px;margin-bottom:12px}
-.online h3{margin:0 0 6px;font-size:15px}
-.srow{display:grid;grid-template-columns:1fr auto;gap:6px}
-#addrRes{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
-#addrRes button{all:unset;cursor:pointer;display:block;font-size:13px;padding:6px 8px;border-radius:8px;background:var(--solid);border:1px solid var(--line)}
-#addrRes button:hover{border-color:var(--ink2)}
-.orow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
-.orow .btn,.orow select{font-size:12.5px;padding:6px 6px}
-#onStatus{margin:6px 0 0;font-size:13px}
-#onStatus.err{color:var(--danger)}
+.mapbtn{width:100%;margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px}
+.mapbtn svg{width:19px;height:19px}
+#dlgMap{width:min(1000px,calc(100% - 16px));height:min(780px,calc(100% - 16px));max-width:none;max-height:none;padding:0;overflow:hidden}
+#dlgMap[open]{display:flex;flex-direction:column}
+.mhead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.mhead h2{flex:none}
+.srch{display:flex;gap:6px;flex:1;min-width:220px;margin:0}
+#mapBox{flex:1;min-height:200px;position:relative;background:var(--field)}
+#map{position:absolute;inset:0}
+#mRes{position:absolute;top:10px;left:56px;right:10px;z-index:1000;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-width:520px}
+#mRes button{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:block;font-size:13.5px;padding:8px 10px;border-radius:9px;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow)}
+#mRes button:hover,#mRes button:focus-visible{border-color:var(--ink2)}
+.mfoot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.mpick{flex:1 1 220px;min-width:0;display:flex;flex-direction:column}
+.mpick b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mopts{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.mopts .chk{margin:0}
+.mopts select{width:auto}
+.mact{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+#mStat{flex-basis:100%;margin:0;font-size:13.5px;min-height:1.3em}
+#mStat.err{color:var(--danger)}
+.leaflet-container{font:13px/1.4 Barlow,system-ui,sans-serif}
 .proj{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .proj select{font-weight:600}
 .projacts{display:flex;flex-wrap:wrap;gap:5px}
@@ -212,17 +224,7 @@ dialog .locg{margin-top:0}
           <button class="btn warn" id="pDel">Löschen</button>
         </div>
       </div>
-      <section class="online" id="onlineBox" hidden>
-        <h3>Adresse suchen und online laden</h3>
-        <div class="srow"><input type="search" id="addr" placeholder="Straße Nr., Ort" aria-label="Adresse"><button class="btn primary" id="addrGo">Suchen</button></div>
-        <ul id="addrRes"></ul>
-        <div class="orow">
-          <select id="onRad" aria-label="Umkreis"><option value="100">100 m</option><option value="150" selected>150 m</option><option value="250">250 m</option></select>
-          <button class="btn" id="onLod">Gebäude</button>
-          <button class="btn" id="onDop">Luftbild</button>
-        </div>
-        <p id="onStatus" role="status"></p>
-      </section>
+      <button class="btn primary mapbtn" id="btnMap"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18s5.5-5.2 5.5-9.5a5.5 5.5 0 0 0-11 0C4.5 12.8 10 18 10 18z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="10" cy="8.5" r="2" fill="currentColor"/></svg>Haus auf der Karte wählen</button>
       <div class="addrow">
         <button class="btn" data-add="building"><svg viewBox="0 0 20 20"><path d="M3 9 10 3l7 6v8H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Gebäude</button>
         <button class="btn" data-add="tree"><svg viewBox="0 0 20 20"><circle cx="10" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 13v5" stroke="currentColor" stroke-width="1.6"/></svg>Baum</button>
@@ -250,7 +252,7 @@ dialog .locg{margin-top:0}
         <button class="btn" id="btnImport">Projekt einfügen</button>
         <button class="btn warn" id="btnReset">Zurücksetzen</button>
       </div>
-      <p class="ctl">Ziehen dreht die Ansicht, Rechtsklick oder Umschalt + Ziehen verschiebt, Mausrad zoomt. Ein ausgewähltes Objekt kannst du direkt in der Szene verschieben. Projekte werden in diesem Browser gespeichert.</p>
+      <p class="ctl">Ziehen dreht die Ansicht, Rechtsklick oder Umschalt + Ziehen verschiebt, Mausrad zoomt. Ein ausgewähltes Objekt kannst du direkt in der Szene verschieben. Projekte werden in diesem Browser gespeichert.<br>Geodaten: Geobasis NRW (dl-de/zero-2-0), © OpenStreetMap-Mitwirkende (ODbL).</p>
     </div>
   </section>
 
@@ -379,6 +381,30 @@ dialog .locg{margin-top:0}
       </div>
     </form>
   </dialog>
+  <dialog id="dlgMap" aria-labelledby="mTitle">
+    <div class="mhead">
+      <h2 id="mTitle">Haus auf der Karte wählen</h2>
+      <form class="srch" id="mSearch"><input type="search" id="mQ" placeholder="Adresse oder Ort suchen" aria-label="Adresse oder Ort suchen" autocomplete="off"><button class="btn" type="submit">Suchen</button></form>
+      <button class="ib" id="mClose" type="button" aria-label="Karte schließen"><svg viewBox="0 0 20 20"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div>
+    <div id="mapBox"><div id="map"></div><ul id="mRes" aria-label="Suchergebnisse"></ul></div>
+    <div class="mfoot">
+      <div class="mpick"><b id="mPick">Tippe auf der Karte auf dein Haus.</b><span class="sub" id="mPickSub">Schalte oben rechts auf Luftbild, um das Dach zu erkennen.</span></div>
+      <div class="mopts">
+        <label class="chk"><input type="checkbox" id="mOptB" checked>Gebäude</label>
+        <label class="chk"><input type="checkbox" id="mOptT" checked>Gelände</label>
+        <label class="chk"><input type="checkbox" id="mOptA" checked>Luftbild</label>
+        <select id="mRad" aria-label="Umkreis"><option value="100">100 m Umkreis</option><option value="150" selected>150 m Umkreis</option><option value="250">250 m Umkreis</option></select>
+        <select id="mTarget" aria-label="Ziel"><option value="new">als neues Projekt</option><option value="cur">ins aktuelle Projekt</option></select>
+      </div>
+      <div class="mact">
+        <button class="btn" id="mEmpty" type="button">Ohne Karte starten</button>
+        <button class="btn primary" id="mGo" type="button" disabled>Daten laden</button>
+      </div>
+      <p id="mStat" role="status"></p>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" hidden></div>
 
   <dialog id="dlg">
@@ -449,7 +475,7 @@ function defaults(){return{name:'Mein Projekt',lat:50.94,lon:6.96,place:'Köln',
 function sanitize(p){
   const d=defaults(); if(!p||!Array.isArray(p.objects))return d;
   const out=Object.assign(d,{name:String(p.name||'Projekt').slice(0,40),lat:+p.lat||d.lat,lon:+p.lon||d.lon,place:String(p.place||''),tz:['eu','0','1','2'].includes(String(p.tz))?String(p.tz):'eu'});
-  out.objects=p.objects.filter(o=>o&&['building','tree','pv','lod2'].includes(o.type)).map(o=>Object.assign({vis:true,name:'Objekt'},o));
+  out.objects=p.objects.filter(o=>o&&['building','tree','pv','lod2','terrain'].includes(o.type)).map(o=>Object.assign({vis:true,name:'Objekt'},o));
   const a=p.aerial; out.aerial=a&&a.img?{img:String(a.img),w:clamp(+a.w||200,5,3000),x:+a.x||0,z:+a.z||0,rot:clamp(+a.rot||0,-180,180),op:clamp(+a.op||1,0.1,1),vis:a.vis!==false}:null;
   out.nextId=out.objects.reduce((m,o)=>Math.max(m,+o.id||0),0)+1; return out;
 }
@@ -524,6 +550,27 @@ const pvTex=(()=>{const c=document.createElement('canvas');c.width=128;c.height=
   x.strokeStyle='#c9d1da';x.lineWidth=7;x.strokeRect(3.5,3.5,121,185);
   const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;})();
 
+/* Gelände: Höhe an einer Stelle der Szene, relativ zum gewählten Punkt */
+const terrCache=new WeakMap();
+function terrainData(o){let d=terrCache.get(o);if(!d){try{d=b64ToI16(o.data);}catch(e){return null;}if(d.length!==o.nx*o.ny)return null;terrCache.set(o,d);}return d;}
+function terrainObj(){return P.objects.find(o=>o.type==='terrain'&&o.vis&&terrainData(o))||null;}
+function groundY(x,z){
+  const o=terrainObj(); if(!o)return 0; const d=terrainData(o),g=o.rot*DEG,cg=Math.cos(g),sg=Math.sin(g);
+  const e=x*cg+z*sg,n=x*sg-z*cg,c=clamp((e-o.e0)/o.px,0,o.nx-1),r=clamp((o.n0-n)/o.px,0,o.ny-1);
+  const c0=Math.floor(c),r0=Math.floor(r),c1=Math.min(c0+1,o.nx-1),r1=Math.min(r0+1,o.ny-1),fc=c-c0,fr=r-r0,v=(a,b)=>d[b*o.nx+a];
+  return((v(c0,r0)*(1-fc)+v(c1,r0)*fc)*(1-fr)+(v(c0,r1)*(1-fc)+v(c1,r1)*fc)*fr)/100;
+}
+function objY(o){
+  if(o.type==='terrain')return 0;
+  if(o.type==='lod2'){const t=terrainObj();if(!t)return 0;return o.base!=null&&isFinite(o.base)?Math.round((o.base-t.h0)*100)/100:groundY(o.x,o.z);}
+  return groundY(o.x,o.z)+(o.type==='pv'?o.elev:0);
+}
+function terrainRange(o){const d=terrainData(o);if(!d)return null;let a=Infinity,b=-Infinity;for(const v of d){if(v<a)a=v;if(v>b)b=v;}return{min:a/100,max:b/100};}
+function syncGround(){
+  const t=terrainObj(), rg=t&&terrainRange(t);
+  ground.position.y=rg?rg.min-0.4:0;
+  if(grid)grid.visible=!t&&!(P.aerial&&P.aerial.vis);
+}
 function panelDims(o){return o.orient==='quer'?{pw:1.722,ph:1.134}:{pw:1.134,ph:1.722};}
 function buildObject(o){
   const g=new THREE.Group(); g.userData.id=o.id;
@@ -536,16 +583,27 @@ function buildObject(o){
       const geo=new THREE.ExtrudeGeometry(sh,{depth:o.d,bevelEnabled:false}); geo.translate(0,0,-o.d/2);
       const roof=add(geo,T.roof,{flatShading:true}); roof.position.y=e;
     }else{const b=add(new THREE.BoxGeometry(o.w,o.h,o.d),T.wall);b.position.y=o.h/2;}
-    g.position.set(o.x,0,o.z); g.rotation.y=-o.rot*DEG;
+    g.position.set(o.x,objY(o),o.z); g.rotation.y=-o.rot*DEG;
   }else if(o.type==='tree'){
     const th=Math.max(o.h-o.r*1.9,0.8);
     const tr=add(new THREE.CylinderGeometry(0.18,0.28,th,8),T.trunk); tr.position.y=th/2;
     const cr=add(new THREE.IcosahedronGeometry(o.r,1),T.crown,{flatShading:true}); cr.position.y=th+o.r*0.95; cr.scale.y=1.05;
-    g.position.set(o.x,0,o.z);
+    g.position.set(o.x,objY(o),o.z);
   }else if(o.type==='lod2'){
     const mk=(arr,color)=>{if(!arr||arr.length<9)return;const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));geo.computeVertexNormals();add(geo,color,{side:THREE.DoubleSide,flatShading:true});};
-    mk(o.walls,o.own?T.own:T.wall); mk(o.roofs,T.roof); mk(o.flats,T.flat);
-    g.position.set(o.x,0,o.z);
+    mk(o.walls,o.own?T.own:T.wall); mk(o.roofs,T.roof); mk(o.flats,o.src==='osm'?T.roof:T.flat);
+    g.position.set(o.x,objY(o),o.z);
+  }else if(o.type==='terrain'){
+    const hd=terrainData(o); if(!hd)return g;
+    const {nx,ny}=o, CH=24;
+    for(let r0=0;r0<ny-1;r0+=CH)for(let c0=0;c0<nx-1;c0+=CH){
+      const r1=Math.min(r0+CH,ny-1),c1=Math.min(c0+CH,nx-1),w=c1-c0+1,pos=[],ix=[];
+      for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++)pos.push(o.e0+c*o.px,hd[r*nx+c]/100,-(o.n0-r*o.px));
+      for(let r=0;r<r1-r0;r++)for(let c=0;c<c1-c0;c++){const a=r*w+c,b=a+1,d=a+w,e=d+1;ix.push(a,d,b,b,d,e);}
+      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(ix);geo.computeVertexNormals();
+      const m=add(geo,T.ground,{roughness:1}); m.userData.terrain=true;
+    }
+    g.rotation.y=-o.rot*DEG;
   }else{
     const {pw,ph}=panelDims(o), gap=0.02, total=o.n*pw+(o.n-1)*gap;
     for(let i=0;i<o.n;i++){
@@ -557,14 +615,14 @@ function buildObject(o){
       const legH=o.elev; const lg=new THREE.BoxGeometry(0.05,legH,0.05);
       for(const sx of[-total/2+0.1,total/2-0.1]){const l=add(lg,0x9aa4ae);l.position.set(sx,-legH/2,-0.05);}
     }
-    g.position.set(o.x,o.elev,o.z); g.rotation.y=(180-o.az)*DEG;
+    g.position.set(o.x,objY(o),o.z); g.rotation.y=(180-o.az)*DEG;
   }
   g.visible=!!o.vis; return g;
 }
 function disposeG(g){g.traverse(m=>{if(m.isMesh){m.geometry.dispose();m.material.dispose();}});}
 
 const groups=new Map(); let occluders=[],pvData=[];
-function rebuildAll(){for(const g of groups.values()){scene.remove(g);disposeG(g);}groups.clear();for(const o of P.objects){const g=buildObject(o);groups.set(o.id,g);scene.add(g);}refreshPV();applySel();}
+function rebuildAll(){for(const g of groups.values()){scene.remove(g);disposeG(g);}groups.clear();for(const o of P.objects){const g=buildObject(o);groups.set(o.id,g);scene.add(g);}syncGround();refreshPV();applySel();}
 function rebuildOne(o){const old=groups.get(o.id);if(old){scene.remove(old);disposeG(old);}const g=buildObject(o);groups.set(o.id,g);scene.add(g);refreshPV();applySel();}
 function collect(objs,getG){
   const occ=[],pvs=[],info=[],q=new THREE.Quaternion();
@@ -693,7 +751,7 @@ const cam={tx:0,ty:2,tz:6,dist:62,theta:0.35,phi:0.95};
 function placeCam(){const sp=Math.sin(cam.phi);camera.position.set(cam.tx+cam.dist*sp*Math.sin(cam.theta),cam.ty+cam.dist*Math.cos(cam.phi),cam.tz+cam.dist*sp*Math.cos(cam.theta));camera.lookAt(cam.tx,cam.ty,cam.tz);req();}
 const ray=new THREE.Raycaster(), ndc=new THREE.Vector2(), gPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 function setNdc(e){const r=canvas.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);}
-function pick(e){setNdc(e);const h=ray.intersectObjects(occluders,false);return h.length?h[0].object.userData.id:null;}
+function pick(e){setNdc(e);const h=ray.intersectObjects(occluders,false);if(!h.length||h[0].object.userData.terrain)return null;return h[0].object.userData.id;}
 function groundAt(e){setNdc(e);const p=new THREE.Vector3();return ray.ray.intersectPlane(gPlane,p)?p:null;}
 function panBy(dx,dy,s){const k=cam.dist*0.0016,rx=Math.cos(cam.theta),rz=-Math.sin(cam.theta),fx=-Math.sin(cam.theta),fz=-Math.cos(cam.theta);cam.tx=s.tx-rx*dx*k+fx*dy*k;cam.tz=s.tz-rz*dx*k+fz*dy*k;}
 const ptrs=new Map(); let mode=null,st=null,moved=false,dragO=null,dragOff=null,downHit=null,pinch0=null;
@@ -716,7 +774,7 @@ canvas.addEventListener('pointermove',e=>{
   if(mode==='orbit'){cam.theta=st.theta-dx*0.006;cam.phi=clamp(st.phi-dy*0.005,0.02,1.45);placeCam();}
   else if(mode==='pan'){panBy(dx,dy,st);placeCam();}
   else if(mode==='imgdrag'){const g=groundAt(e);if(g){P.aerial.x=Math.round((imgStart.x+g.x-imgStart.gx)*10)/10;P.aerial.z=Math.round((imgStart.z+g.z-imgStart.gz)*10)/10;aerialGroup.position.x=P.aerial.x;aerialGroup.position.z=P.aerial.z;syncAerFields();req();}}
-  else if(mode==='drag'){const g=groundAt(e);if(g){dragO.x=Math.round((g.x-dragOff.x)*10)/10;dragO.z=Math.round((g.z-dragOff.z)*10)/10;const gr=groups.get(dragO.id);gr.position.x=dragO.x;gr.position.z=dragO.z;updateCompassDay();updateSun();syncEditorPos();}}
+  else if(mode==='drag'){const g=groundAt(e);if(g){dragO.x=Math.round((g.x-dragOff.x)*10)/10;dragO.z=Math.round((g.z-dragOff.z)*10)/10;const gr=groups.get(dragO.id);gr.position.set(dragO.x,objY(dragO),dragO.z);updateCompassDay();updateSun();syncEditorPos();}}
 });
 function endPtr(e){
   ptrs.delete(e.pointerId);
@@ -734,13 +792,15 @@ const ICON={
   building:'<svg viewBox="0 0 20 20"><path d="M3 9 10 3l7 6v8H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
   tree:'<svg viewBox="0 0 20 20"><circle cx="10" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 13v5" stroke="currentColor" stroke-width="1.6"/></svg>',
   pv:'<svg viewBox="0 0 20 20"><path d="M3 15 6 5h11l-3 10z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 10h11M11.5 5l-3 10" stroke="currentColor" stroke-width="1.2"/></svg>',
-  lod2:'<svg viewBox="0 0 20 20"><path d="M3 17V9l4-3 4 3v8M11 17V6l3-2 3 2v11M2 17h16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'};
+  lod2:'<svg viewBox="0 0 20 20"><path d="M3 17V9l4-3 4 3v8M11 17V6l3-2 3 2v11M2 17h16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  terrain:'<svg viewBox="0 0 20 20"><path d="M1.5 16 7 8l3.5 4.5L13 9.5l5.5 6.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'};
 const EYE='<svg viewBox="0 0 20 20"><path d="M1.8 10S5 4.5 10 4.5 18.2 10 18.2 10 15 15.5 10 15.5 1.8 10 1.8 10z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>';
 const EYE_OFF='<svg viewBox="0 0 20 20"><path d="M1.8 10S5 4.5 10 4.5 18.2 10 18.2 10 15 15.5 10 15.5 1.8 10 1.8 10z" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5"/><path d="M3.5 16.5 16.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 function metaOf(o){
   if(o.type==='building')return `${nf1.format(o.w)} × ${nf1.format(o.d)} m, ${nf1.format(o.h)} m hoch`;
   if(o.type==='tree')return `${nf1.format(o.h)} m hoch, Krone ${nf1.format(o.r*2)} m`;
-  if(o.type==='lod2')return `${o.own?'Eigenes Haus, ':''}${nf1.format(o.h)} m hoch, aus LoD2`;
+  if(o.type==='lod2')return `${o.own?'Eigenes Haus, ':''}${nf1.format(o.h)} m hoch, aus ${o.src==='osm'?'OpenStreetMap':'LoD2'}`;
+  if(o.type==='terrain'){const rg=terrainRange(o);return `${nf0.format(o.nx*o.px)} m Kante`+(rg?`, ${nf1.format(rg.max-rg.min)} m Höhenunterschied`:'');}
   return `${o.n} × ${nf0.format(o.wp)} Wp, ${compassWord(o.az)}, ${nf0.format(o.tilt)}° geneigt`;
 }
 function renderList(){
@@ -755,7 +815,7 @@ function renderList(){
   }
   if(env.length){
     const vis=env.some(o=>o.vis), li=document.createElement('li'); li.className='item group'+(vis?'':' off');
-    li.innerHTML=`<span class="ic">${ICON.lod2}</span><button class="nm" data-env="1"><span class="n">Umgebung aus LoD2</span><span class="m">${env.length} Gebäude, antippen zum Auswählen in der Szene</span></button><button class="eye" data-enveye="1" aria-label="${vis?'Umgebung ausblenden':'Umgebung einblenden'}">${vis?EYE:EYE_OFF}</button>`;
+    li.innerHTML=`<span class="ic">${ICON.lod2}</span><button class="nm" data-env="1"><span class="n">Umgebung aus ${env.some(o=>o.src==='osm')?'OpenStreetMap':'LoD2'}</span><span class="m">${env.length} Gebäude, antippen zum Auswählen in der Szene</span></button><button class="eye" data-enveye="1" aria-label="${vis?'Umgebung ausblenden':'Umgebung einblenden'}">${vis?EYE:EYE_OFF}</button>`;
     ul.appendChild(li);
   }
 }
@@ -763,7 +823,7 @@ function updateListMeta(){for(const o of P.objects){const li=document.querySelec
 $('#list').addEventListener('click',e=>{
   if(e.target.closest('[data-enveye]')){const env=P.objects.filter(o=>o.type==='lod2');const v=!env.some(o=>o.vis);env.forEach(o=>{o.vis=v;const g=groups.get(o.id);if(g)g.visible=v;});refreshPV();markDirty();save();renderList();req();return;}
   if(e.target.closest('[data-env]')){toast('Tippe ein Gebäude in der Szene an, um es auszuwählen.');return;}
-  const eye=e.target.closest('[data-eye]'); if(eye){const o=objById(+eye.dataset.eye);o.vis=!o.vis;groups.get(o.id).visible=o.vis;refreshPV();updateCompassDay();updateSun();markDirty();save();renderList();return;}
+  const eye=e.target.closest('[data-eye]'); if(eye){const o=objById(+eye.dataset.eye);o.vis=!o.vis;if(o.type==='terrain'){rebuildAll();rebuildAerial();}else groups.get(o.id).visible=o.vis;refreshPV();updateCompassDay();updateSun();markDirty();save();renderList();return;}
   const nm=e.target.closest('[data-id]'); if(nm){const id=+nm.dataset.id;select(S.sel===id?null:id);}
 });
 const POS=[['x','Versatz Ost',-120,120,0.1,'m'],['z','Versatz Süd',-120,120,0.1,'m']];
@@ -771,6 +831,7 @@ const FIELDS={
   building:[['name','Name','text'],...POS,['rot','Drehung',0,359,1,'°'],['w','Breite',1,80,0.1,'m'],['d','Tiefe',1,80,0.1,'m'],['roof','Dach','sel',[['flach','Flachdach'],['sattel','Satteldach']]],['eave','Traufhöhe',1,80,0.1,'m'],['h','Gesamthöhe',1,120,0.1,'m']],
   tree:[['name','Name','text'],...POS,['h','Höhe',2,40,0.1,'m'],['r','Kronenradius',0.5,12,0.1,'m']],
   lod2:[['name','Name','text'],...POS],
+  terrain:[['name','Name','text']],
   pv:[['name','Name','text'],...POS,['elev','Montagehöhe',0,60,0.1,'m'],['az','Ausrichtung',0,359,1,'°'],['tilt','Neigung',0,90,1,'°'],['n','Anzahl Module',1,24,1,''],['orient','Format','sel',[['hoch','Hochformat'],['quer','Querformat']]],['wp','Leistung je Modul',100,700,5,'Wp']]
 };
 function field(o,f,onCh,pre){
@@ -795,7 +856,7 @@ function renderEditor(){
   for(const f of FIELDS[o.type]){if(f[0]==='eave'&&o.roof!=='sattel')continue;box.appendChild(field(o,f));}
   if(o.type==='lod2'){const l=document.createElement('label');l.className='chk';l.innerHTML='<input type="checkbox">Als eigenes Haus markieren';const cb=l.querySelector('input');cb.checked=!!o.own;cb.addEventListener('change',()=>{o.own=cb.checked;onObjChange(o);renderList();});box.appendChild(l);}
   const a=document.createElement('div'); a.className='acts';
-  a.innerHTML=o.type==='lod2'?'<button class="btn warn" id="del">Gebäude löschen</button><button class="btn warn" id="delEnv">Ganze Umgebung entfernen</button>':'<button class="btn" id="dup">Duplizieren</button><button class="btn warn" id="del">Löschen</button>'; box.appendChild(a);
+  a.innerHTML=o.type==='terrain'?'<button class="btn warn" id="del">Gelände entfernen</button>':o.type==='lod2'?'<button class="btn warn" id="del">Gebäude löschen</button><button class="btn warn" id="delEnv">Ganze Umgebung entfernen</button>':'<button class="btn" id="dup">Duplizieren</button><button class="btn warn" id="del">Löschen</button>'; box.appendChild(a);
   const de=$('#delEnv'); if(de)de.onclick=()=>{if(de.dataset.arm){removeEnv();return;}de.dataset.arm='1';de.textContent='Wirklich entfernen?';setTimeout(()=>{if(de.isConnected){delete de.dataset.arm;de.textContent='Ganze Umgebung entfernen';}},3000);};
   if($('#dup'))$('#dup').onclick=()=>{const c=Object.assign({},o,{id:P.nextId++,name:o.name+' Kopie',x:o.x+2,z:o.z+2});P.objects.push(c);rebuildOne(c);select(c.id);markDirty();save();};
   $('#del').onclick=()=>delObj(o.id);
@@ -803,7 +864,7 @@ function renderEditor(){
 function removeEnv(){for(const o of P.objects)if(o.type==='lod2'){const g=groups.get(o.id);if(g){scene.remove(g);disposeG(g);groups.delete(o.id);}}P.objects=P.objects.filter(o=>o.type!=='lod2');refreshPV();select(null);markDirty();save();toast('Die importierte Umgebung wurde entfernt.');}
 function onObjChange(o){rebuildOne(o);updateListMeta();updateCompassDay();updateSun();markDirty();save();}
 function select(id){S.sel=id;applySel();renderList();renderEditor();updateCompassDay();updateSun();}
-function delObj(id){const g=groups.get(id);if(g){scene.remove(g);disposeG(g);groups.delete(id);}P.objects=P.objects.filter(o=>o.id!==id);refreshPV();select(null);markDirty();save();}
+function delObj(id){const wasT=objById(id)&&objById(id).type==='terrain';const g=groups.get(id);if(g){scene.remove(g);disposeG(g);groups.delete(id);}P.objects=P.objects.filter(o=>o.id!==id);if(wasT){rebuildAll();rebuildAerial();}refreshPV();select(null);markDirty();save();}
 function addObj(type){
   const id=P.nextId++, x=Math.round(cam.tx), z=Math.round(cam.tz); let o;
   if(type==='building')o={id,type,name:'Gebäude '+id,x,z,rot:0,w:8,d:8,roof:'flach',eave:6,h:6,vis:true};
@@ -947,7 +1008,7 @@ $('#btnReset').addEventListener('click',e=>{
   if(!resetArm){b.textContent='Wirklich zurücksetzen?';resetArm=setTimeout(()=>{b.textContent='Zurücksetzen';resetArm=null;},3000);return;}
   clearTimeout(resetArm); resetArm=null; b.textContent='Zurücksetzen'; const d=defaults();d.name=P.name;P=d;flushSave();applyProject(P);
 });
-let toastT; function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true;},3800);}
+let toastT; function toast(msg,ms){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true;},ms||3800);}
 
 /* ---------- Mehrere Projekte ---------- */
 function renderProjSel(){const sel=$('#projSel');sel.innerHTML='';for(const e of idx.list){const o=document.createElement('option');o.value=e.id;o.textContent=e.name;sel.appendChild(o);}sel.value=idx.active;$('#pDel').disabled=idx.list.length<2;}
@@ -957,10 +1018,7 @@ function addProject(p){flushSave();const id=newPid();idx.list.push({id,name:p.na
 function askName(title,text,val){return new Promise(res=>{const d=$('#dlgName');$('#nT').textContent=title;$('#nP').textContent=text;$('#nIn').value=val;d.returnValue='';
   const h=()=>{d.removeEventListener('close',h);const v=$('#nIn').value.trim();res(d.returnValue==='ok'&&v?v.slice(0,40):null);};d.addEventListener('close',h);d.showModal();$('#nIn').select();});}
 $('#projSel').addEventListener('change',e=>switchTo(e.target.value));
-$('#pNew').addEventListener('click',async()=>{
-  const n=await askName('Neues Projekt','Das neue Projekt startet am gleichen Standort mit zwei Modulen und ohne Umgebung. Für eine Variante mit importierter Umgebung nutze Duplizieren.','Projekt '+(idx.list.length+1)); if(!n)return;
-  const d=defaults(); d.name=n; d.lat=P.lat; d.lon=P.lon; d.place=P.place; d.tz=P.tz; d.objects=d.objects.filter(o=>o.type==='pv'); addProject(d); toast(`Projekt „${n}“ angelegt.`);
-});
+$('#pNew').addEventListener('click',()=>openMap('new'));
 $('#pDup').addEventListener('click',async()=>{
   const n=await askName('Projekt duplizieren','Die Kopie übernimmt Standort, Umgebung und Module. So kannst du Varianten nebeneinander planen und vergleichen.',P.name+' Variante'); if(!n)return;
   flushSave(); const c=sanitize(JSON.parse(JSON.stringify(P))); c.name=n; addProject(c); toast(`Variante „${n}“ angelegt.`);
@@ -1022,20 +1080,24 @@ function getTex(id,cb){
 function rebuildAerial(){
   if(aerialGroup){scene.remove(aerialGroup);aerialGroup.traverse(m=>{if(m.isMesh){m.geometry.dispose();m.material.dispose();}});aerialGroup=null;}
   const a=P.aerial; renderAerUI();
-  if(grid)grid.visible=!(a&&a.vis);
+  syncGround();
   if(!a)return;
   const tex=getTex(a.img,rebuildAerial);
   if(!tex){if(!lsGet(IKEY(a.img)))$('#aerHint').textContent='Das Luftbild dieses Projekts ist in diesem Browser nicht gespeichert. Lade es erneut.';req();return;}
   const h=a.w*tex.image.height/tex.image.width;
-  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(a.w,h),new THREE.MeshStandardMaterial({map:tex,roughness:1,metalness:0,transparent:a.op<1,opacity:a.op,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
-  mesh.rotation.x=-Math.PI/2; mesh.receiveShadow=true;
+  const t=terrainObj(), seg=t?Math.min(256,Math.ceil(a.w/1.5)):1, geo=new THREE.PlaneGeometry(a.w,h,seg,t?Math.min(256,Math.ceil(h/1.5)):1); geo.rotateX(-Math.PI/2);
+  if(t){const pos=geo.attributes.position,g=-a.rot*DEG,c=Math.cos(g),s=Math.sin(g);
+    for(let i=0;i<pos.count;i++){const lx=pos.getX(i),lz=pos.getZ(i);pos.setY(i,groundY(a.x+lx*c+lz*s,a.z-lx*s+lz*c)+0.05);}
+    geo.computeVertexNormals();}
+  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:tex,roughness:1,metalness:0,transparent:a.op<1,opacity:a.op,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+  mesh.receiveShadow=true;
   aerialGroup=new THREE.Group(); aerialGroup.add(mesh); aerialGroup.position.set(a.x,0.03,a.z); aerialGroup.rotation.y=-a.rot*DEG; aerialGroup.visible=a.vis;
   scene.add(aerialGroup); req();
 }
 const AER_F=[['w','Bildbreite',20,1500,1,'m'],['x','Versatz Ost',-400,400,0.1,'m'],['z','Versatz Süd',-400,400,0.1,'m'],['rot','Drehung',-20,20,0.1,'°'],['op','Deckkraft',0.2,1,0.05,'']];
 function renderAerUI(){
   const a=P.aerial; $('#aerCtl').hidden=!a; $('#aerLoadTxt').textContent=a?'Anderes Luftbild laden':'Luftbild laden';
-  $('#aerHint').textContent=a?'Wechsle in die Draufsicht und schalte „Ausrichten per Ziehen“ ein. Dann ziehst du das Bild, bis die Gebäude passen. Mit der Bildbreite stellst du den Maßstab ein.':'Lade einen Screenshot mit Norden oben, zum Beispiel aus TIM-online oder dem Geoportal NRW mit eingeschaltetem Luftbild. Danach richtest du ihn in der Draufsicht an den Gebäuden aus.';
+  $('#aerHint').textContent=a?'Passt das Luftbild nicht genau zu den Gebäuden, wechsle in die Draufsicht und schalte „Ausrichten per Ziehen“ ein. Mit der Bildbreite stellst du den Maßstab ein.':'Lade einen Screenshot mit Norden oben, zum Beispiel aus TIM-online oder dem Geoportal NRW mit eingeschaltetem Luftbild. Danach richtest du ihn in der Draufsicht an den Gebäuden aus.';
   const box=$('#aerFields'); box.innerHTML=''; if(!a)return;
   for(const f of AER_F)box.appendChild(field(a,f,()=>{rebuildAerial();save();},'a-'));
   $('#aerVis').checked=a.vis;
@@ -1114,7 +1176,7 @@ function parseMember(chunk,E0,N0,radius,rot){
     for(const t of triIdx(loc))for(const i of t)target.push(r2(loc[i][0]),r2(loc[i][1]),r2(loc[i][2]));
   }
   const nm=/<xal:ThoroughfareName>([^<]+)</.exec(chunk),nr=/<xal:ThoroughfareNumber>([^<]+)</.exec(chunk),id=/gml:id="([^"]+)"/.exec(chunk);
-  return{type:'lod2',name:nm?(nm[1]+(nr?' '+nr[1]:'')):'Gebäude ohne Adresse',x:cx,z:cz,h:Math.round(h*10)/10,own,walls,roofs,flats,gid:id?id[1]:'',vis:true};
+  return{type:'lod2',name:nm?(nm[1]+(nr?' '+nr[1]:'')):'Gebäude ohne Adresse',x:cx,z:cz,h:Math.round(h*10)/10,base:Math.round(base*100)/100,own,walls,roofs,flats,gid:id?id[1]:'',vis:true};
 }
 function parseLoD2(text,E0,N0,radius,rot){
   const out=[]; let pos=0, env=null;
@@ -1166,43 +1228,177 @@ $('#impGo').addEventListener('click',async()=>{
   }catch(err){impStatus('Die Datei konnte nicht gelesen werden. Prüfe, ob es eine CityGML-Datei von Geobasis NRW ist.',true);}
   finally{go.disabled=false;}
 });
-/* ---------- Online: Adresse, LoD2 und Luftbild nachladen (nur gehostete Version) ---------- */
-function onStat(t,err){const el=$('#onStatus');el.textContent=t;el.className=err?'err':'';}
+/* ---------- Standort auf der Karte wählen und Geodaten laden ---------- */
+const LEAFLET='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
+const GEOTIFF_JS='https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js';
+const DOP_WMS='https://www.wms.nrw.de/geobasis/wms_nw_dop';
+const DGM_WCS='https://www.wcs.nrw.de/geobasis/wcs_nw_dgm';
+const NOMINATIM='https://nominatim.openstreetmap.org/';
+const OVERPASS='https://overpass-api.de/api/interpreter';
+const libP={};
+function loadScript(src){return libP[src]||(libP[src]=new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=()=>res();s.onerror=()=>{delete libP[src];rej(new Error('Eine benötigte Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung.'));};document.head.appendChild(s);}));}
+function loadCss(href){if(document.querySelector(`link[href="${href}"]`))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l);}
+const inNRW=(la,lo)=>la>50.3&&la<52.55&&lo>5.85&&lo<9.47;
+let apiP=null;
+function hasApi(){if(!apiP)apiP=/^https?:$/.test(location.protocol)?fetch('api/ping',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>!!(j&&j.lod2)).catch(()=>false):Promise.resolve(false);return apiP;}
 async function apiJson(url){const r=await fetch(url);let j=null;try{j=await r.json();}catch(e){}if(!r.ok)throw new Error((j&&j.error)||('Fehler '+r.status));return j;}
-async function onlineLod(){
-  const rad=+$('#onRad').value; onStat('Lade Gebäude von Geobasis NRW …');
-  const j=await apiJson(`api/lod2?lat=${P.lat}&lon=${P.lon}&r=${rad}`);
-  if(!j.buildings.length){onStat('Im Umkreis wurden keine Gebäude gefunden.',true);return false;}
-  applyBuildings(j.buildings,P.lat,P.lon,true,P.place); onStat(`${j.buildings.length} Gebäude geladen.`); return true;
+function tilesFor(E,N,r){const out=[];for(let e=Math.floor((E-r)/1000);e<=Math.floor((E+r)/1000);e++)for(let n=Math.floor((N-r)/1000);n<=Math.floor((N+r)/1000);n++)out.push(`LoD2_32_${e}_${n}_1_NW.gml`);return out;}
+
+/* Gebäude: LoD2 über die eigene API, sonst direkt im Browser, außerhalb von NRW aus OpenStreetMap */
+async function fetchBuildings(lat,lon,r,say){
+  if(!inNRW(lat,lon)){say('Lade Gebäude aus OpenStreetMap …');return{list:await fetchOsm(lat,lon,r),src:'OpenStreetMap'};}
+  if(await hasApi()){const j=await apiJson(`api/lod2?lat=${lat}&lon=${lon}&r=${r}`);return{list:j.buildings,src:'LoD2'};}
+  const u=utm32(lat,lon),rot=-gridConv(lat,lon),seen=new Set(),list=[]; let found=0;
+  for(const name of tilesFor(u.E,u.N,r)){
+    say(`Lade LoD2-Kachel ${name} …`);
+    const res=await fetch(LOD2_BASE+name); if(res.status===404)continue; if(!res.ok)throw new Error('Geobasis NRW antwortet mit Fehler '+res.status+'.');
+    const txt=await res.text(); found++; say('Werte Gebäude aus …'); await new Promise(z=>setTimeout(z,20));
+    for(const b of parseLoD2(txt,u.E,u.N,r,rot).out){if(b.gid&&seen.has(b.gid))continue;seen.add(b.gid);list.push(b);}
+  }
+  if(!found)throw new Error('Für diesen Standort gibt es keine LoD2-Kachel.');
+  return{list,src:'LoD2'};
 }
-async function onlineDop(){
-  const size=Math.max(200,+$('#onRad').value*2); onStat('Lade Luftbild von Geobasis NRW …');
-  const r=await fetch(`api/dop?lat=${P.lat}&lon=${P.lon}&size=${size}`);
-  if(!r.ok){let m='Luftbild nicht verfügbar.';try{m=(await r.json()).error||m;}catch(e){}throw new Error(m);}
-  const url=await downscale(await r.blob(),2048), id=hashStr(url); lsSet(IKEY(id),url);
-  P.aerial={img:id,w:size,x:0,z:0,rot:Math.round(gridConv(P.lat,P.lon)/DEG*100)/100,op:1,vis:true};
-  flushSave(); gcImages(); rebuildAerial(); onStat('Luftbild geladen und ausgerichtet.');
+async function fetchOsm(lat,lon,r){
+  const q=`[out:json][timeout:25];way["building"](around:${r+30},${lat},${lon});out geom tags;`;
+  const res=await fetch(OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});
+  if(!res.ok)throw new Error('OpenStreetMap-Gebäude sind gerade nicht erreichbar (Fehler '+res.status+').');
+  return osmToBuildings(await res.json(),lat,lon,r);
 }
-async function onlineAll(){
-  const bl=document.querySelectorAll('#onlineBox button'); bl.forEach(b=>b.disabled=true);
-  try{const ok=await onlineLod(); await onlineDop(); if(ok)onStat('Gebäude und Luftbild geladen. Setze jetzt Bäume und Module.');}
-  catch(e){onStat(e.message,true);} finally{bl.forEach(b=>b.disabled=false);}
+function osmToBuildings(j,lat,lon,r){
+  const kx=Math.cos(lat*DEG)*111320,kz=110574,out=[];
+  for(const el of (j.elements||[])){
+    if(el.type!=='way'||!el.geometry||el.geometry.length<4)continue;
+    const t=el.tags||{}; let pts=el.geometry.map(g=>[(g.lon-lon)*kx,0,-(g.lat-lat)*kz]);
+    const f=pts[0],l=pts[pts.length-1]; if(f[0]===l[0]&&f[2]===l[2])pts.pop(); if(pts.length<3)continue;
+    if(Math.min(...pts.map(p=>Math.hypot(p[0],p[2])))>r)continue;
+    const lv=parseFloat(t['building:levels']),hh=parseFloat(String(t.height||'').replace(',','.'));
+    const h=Math.round((isFinite(hh)&&hh>0?hh:isFinite(lv)&&lv>0?lv*3+1:t.building==='garage'||t.building==='shed'?3:8)*10)/10;
+    const own=pip(0,0,pts); let cx=0,cz=0; for(const p of pts){cx+=p[0];cz+=p[2];} cx=Math.round(cx/pts.length*10)/10; cz=Math.round(cz/pts.length*10)/10;
+    const loc=pts.map(p=>new THREE.Vector2(p[0]-cx,p[2]-cz)), r2=v=>Math.round(v*100)/100, walls=[], flats=[];
+    for(let i=0;i<loc.length;i++){const a=loc[i],b=loc[(i+1)%loc.length];walls.push(r2(a.x),0,r2(a.y),r2(b.x),0,r2(b.y),r2(b.x),h,r2(b.y), r2(a.x),0,r2(a.y),r2(b.x),h,r2(b.y),r2(a.x),h,r2(a.y));}
+    let tri=[]; try{tri=THREE.ShapeUtils.triangulateShape(loc,[]);}catch(e){}
+    for(const tr of tri)for(const i of tr)flats.push(r2(loc[i].x),h,r2(loc[i].y));
+    const name=t['addr:street']?t['addr:street']+(t['addr:housenumber']?' '+t['addr:housenumber']:''):'Gebäude aus OSM';
+    out.push({type:'lod2',name,x:cx,z:cz,h,own,walls,roofs:[],flats,gid:'osm'+el.id,src:'osm',vis:true});
+  }
+  return out;
 }
-$('#addrGo').addEventListener('click',async()=>{
-  const q=$('#addr').value.trim(); if(q.length<4){onStat('Gib eine Adresse mit Ort ein.',true);return;}
-  const ul=$('#addrRes'); ul.innerHTML=''; onStat('Suche …');
-  try{const j=await apiJson('api/geocode?q='+encodeURIComponent(q));
-    if(!j.results.length){onStat('Keine Adresse gefunden. Prüfe Schreibweise und Ort.',true);return;}
-    onStat('Wähle den passenden Treffer.');
-    for(const h of j.results){const li=document.createElement('li'),b=document.createElement('button');b.textContent=h.name;
-      b.addEventListener('click',()=>{ul.innerHTML='';P.lat=Math.round(h.lat*1e7)/1e7;P.lon=Math.round(h.lon*1e7)/1e7;P.place=h.short||h.name.split(',').slice(0,2).join(',');syncLoc();flushSave();updateCompassDay();markDirty();onTime();onlineAll();});
+
+/* Gelände: DGM1 von Geobasis NRW als Höhenraster */
+async function fetchTerrain(lat,lon,r){
+  await loadScript(GEOTIFF_JS);
+  const u=utm32(lat,lon),m=r+20,px=r<=150?2:3,n=Math.round(2*m/px),E0=u.E,N0=u.N;
+  const url=`${DGM_WCS}?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=nw_dgm&FORMAT=image/tiff&SUBSET=x(${(E0-m).toFixed(1)},${(E0+m).toFixed(1)})&SUBSET=y(${(N0-m).toFixed(1)},${(N0+m).toFixed(1)})&SCALESIZE=x(${n}),y(${n})`;
+  const res=await fetch(url); if(!res.ok)throw new Error('Das Gelände ist gerade nicht verfügbar (Fehler '+res.status+').');
+  const tif=await GeoTIFF.fromArrayBuffer(await res.arrayBuffer()), img=await tif.getImage(), w=img.getWidth(), h=img.getHeight(), d=(await img.readRasters())[0];
+  const step=2*m/w, ok=v=>v>-1000&&v<9000;
+  const at=(e,nn)=>{const c=clamp((e+m)/step-0.5,0,w-1),rr=clamp((m-nn)/step-0.5,0,h-1),c0=Math.floor(c),r0=Math.floor(rr),c1=Math.min(c0+1,w-1),r1=Math.min(r0+1,h-1),fc=c-c0,fr=rr-r0;
+    const v=(a,b)=>{const x=d[b*w+a];return ok(x)?x:NaN;};return(v(c0,r0)*(1-fc)+v(c1,r0)*fc)*(1-fr)+(v(c0,r1)*(1-fc)+v(c1,r1)*fc)*fr;};
+  let h0=at(0,0); if(!isFinite(h0)){const vals=[...d].filter(ok);if(!vals.length)throw new Error('Für diesen Standort liefert Geobasis NRW kein Gelände.');h0=vals.sort((a,b)=>a-b)[vals.length>>1];}
+  const q=new Int16Array(w*h); for(let i=0;i<q.length;i++)q[i]=ok(d[i])?clamp(Math.round((d[i]-h0)*100),-32000,32000):0;
+  return{type:'terrain',name:'Gelände aus DGM1',x:0,z:0,nx:w,ny:h,px:Math.round(step*1000)/1000,e0:-m+step/2,n0:m-step/2,rot:Math.round(gridConv(lat,lon)/DEG*1e4)/1e4,h0:Math.round(h0*100)/100,data:i16ToB64(q),vis:true};
+}
+function i16ToB64(a){const b=new Uint8Array(a.buffer);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s);}
+function b64ToI16(s){const bin=atob(s),b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return new Int16Array(b.buffer);}
+
+/* Luftbild: DOP von Geobasis NRW, nordausgerichtet im UTM-Raster */
+async function fetchAerial(lat,lon,r){
+  const u=utm32(lat,lon),size=2*(r+20),hs=size/2;
+  const url=`${DOP_WMS}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=nw_dop_rgb&STYLES=&CRS=EPSG:25832&BBOX=${(u.E-hs).toFixed(1)},${(u.N-hs).toFixed(1)},${(u.E+hs).toFixed(1)},${(u.N+hs).toFixed(1)}&WIDTH=2048&HEIGHT=2048&FORMAT=image/jpeg`;
+  const res=await fetch(url); if(!res.ok||!/^image\//.test(res.headers.get('content-type')||''))throw new Error('Das Luftbild ist gerade nicht verfügbar.');
+  const data=await downscale(await res.blob(),1600);
+  return{data,w:size,rot:Math.round(gridConv(lat,lon)/DEG*100)/100};
+}
+
+/* Karte */
+const dlgMap=$('#dlgMap'); let map=null,mPt=null,mMark=null,mCirc=null,mTok=0;
+function mStat(t,err){const el=$('#mStat');el.textContent=t||'';el.className=err?'err':'';}
+function shortAddr(a,fb){if(!a)return fb;const st=a.road||a.pedestrian||a.footway||a.square||'',hn=a.house_number||'',ort=a.city||a.town||a.village||a.municipality||a.suburb||'';const s=[(st+(hn?' '+hn:'')).trim(),ort].filter(Boolean).join(', ');return s||fb;}
+async function openMap(target){
+  $('#mTarget').value=target||'new'; mStat(''); $('#mRes').innerHTML=''; dlgMap.showModal();
+  try{loadCss(LEAFLET+'leaflet.min.css');await loadScript(LEAFLET+'leaflet.min.js');}catch(e){mStat(e.message,true);return;}
+  if(!map){
+    map=L.map('map',{maxZoom:20}).setView([P.lat,P.lon],17);
+    const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxNativeZoom:19,maxZoom:20,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende'});
+    const dop=L.tileLayer.wms(DOP_WMS,{layers:'nw_dop_rgb',format:'image/jpeg',maxZoom:20,attribution:'Luftbild © Geobasis NRW, dl-de/zero-2-0'});
+    osm.addTo(map); L.control.layers({'Karte':osm,'Luftbild NRW':dop},null,{collapsed:false}).addTo(map);
+    map.on('click',e=>setPick(e.latlng.lat,e.latlng.lng,null));
+  }
+  setTimeout(()=>{map.invalidateSize();if(!mPt)map.setView([P.lat,P.lon],map.getZoom());},60);
+}
+function drawPick(){
+  if(!map||!mPt)return; const r=+$('#mRad').value;
+  if(!mMark){mMark=L.circleMarker([mPt.lat,mPt.lon],{radius:7,color:'#3D2A00',weight:2,fillColor:'#F0A500',fillOpacity:1}).addTo(map);mCirc=L.circle([mPt.lat,mPt.lon],{radius:r,color:'#F0A500',weight:2,fillOpacity:.06,interactive:false}).addTo(map);}
+  else{mMark.setLatLng([mPt.lat,mPt.lon]);mCirc.setLatLng([mPt.lat,mPt.lon]).setRadius(r);}
+}
+function setPick(lat,lon,name){
+  mPt={lat:Math.round(lat*1e7)/1e7,lon:Math.round(lon*1e7)/1e7,name:name||''}; drawPick(); $('#mGo').disabled=false; mStat('');
+  $('#mPick').textContent=name||'Gewählter Punkt'; $('#mPickSub').textContent=`${nf4.format(mPt.lat)}° N, ${nf4.format(mPt.lon)}° O`+(inNRW(lat,lon)?'':' · außerhalb von NRW: Gebäude aus OpenStreetMap, ohne Gelände und Luftbild');
+  if(name)return; const tok=++mTok;
+  fetch(`${NOMINATIM}reverse?format=jsonv2&zoom=18&addressdetails=1&accept-language=de&lat=${mPt.lat}&lon=${mPt.lon}`).then(r=>r.json()).then(j=>{if(tok!==mTok||!j)return;mPt.name=shortAddr(j.address,'');if(mPt.name)$('#mPick').textContent=mPt.name;}).catch(()=>{});
+}
+$('#mRad').addEventListener('change',drawPick);
+$('#mSearch').addEventListener('submit',async e=>{
+  e.preventDefault(); const q=$('#mQ').value.trim(), ul=$('#mRes'); ul.innerHTML='';
+  if(q.length<3){mStat('Gib eine Adresse oder einen Ort ein.',true);return;}
+  mStat('Suche …');
+  try{const r=await fetch(`${NOMINATIM}search?format=jsonv2&limit=6&addressdetails=1&accept-language=de&q=${encodeURIComponent(q)}`);if(!r.ok)throw 0;const j=await r.json();
+    if(!j.length){mStat('Nichts gefunden. Prüfe Schreibweise und Ort.',true);return;}
+    mStat('Wähle den passenden Treffer.');
+    for(const h of j){const li=document.createElement('li'),b=document.createElement('button');b.type='button';b.textContent=h.display_name;
+      b.addEventListener('click',()=>{ul.innerHTML='';const la=+h.lat,lo=+h.lon,house=h.address&&h.address.house_number;map.setView([la,lo],house?19:16);if(house){setPick(la,lo,shortAddr(h.address,h.display_name));mStat('Prüfe, ob der Punkt auf deinem Dach liegt. Tippe sonst direkt auf das Haus.');}else mStat('Tippe jetzt auf dein Haus.');});
       li.appendChild(b);ul.appendChild(li);}
-  }catch(e){onStat(e.message,true);}
+  }catch(err){mStat('Die Adresssuche ist gerade nicht erreichbar.',true);}
 });
-$('#addr').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addrGo').click();}});
-$('#onLod').addEventListener('click',async e=>{e.target.disabled=true;try{await onlineLod();}catch(err){onStat(err.message,true);}finally{e.target.disabled=false;}});
-$('#onDop').addEventListener('click',async e=>{e.target.disabled=true;try{await onlineDop();}catch(err){onStat(err.message,true);}finally{e.target.disabled=false;}});
-(async()=>{if(!/^https?:$/.test(location.protocol))return;try{const r=await fetch('api/ping',{cache:'no-store'});if(r.ok&&(await r.json()).ok)$('#onlineBox').hidden=false;}catch(e){}})();
+$('#mClose').addEventListener('click',()=>dlgMap.close());
+$('#mEmpty').addEventListener('click',async()=>{dlgMap.close();await newEmptyProject();});
+$('#btnMap').addEventListener('click',()=>openMap(idx.list.length===1&&isDemo(P)?'cur':'new'));
+function isDemo(p){return p.objects.some(o=>o.type==='building'&&o.name==='Wohnhaus')&&!p.objects.some(o=>o.type==='lod2'||o.type==='terrain');}
+
+$('#mGo').addEventListener('click',async()=>{
+  if(!mPt)return; const go=$('#mGo'); go.disabled=true; $('#mEmpty').disabled=true;
+  const {lat,lon}=mPt, r=+$('#mRad').value, nrw=inNRW(lat,lon), want={b:$('#mOptB').checked,t:$('#mOptT').checked&&nrw,a:$('#mOptA').checked&&nrw};
+  if(!want.b&&!want.t&&!want.a){mStat(nrw?'Wähle mindestens eine Datenart.':'Außerhalb von NRW gibt es nur Gebäude aus OpenStreetMap.',true);go.disabled=false;$('#mEmpty').disabled=false;return;}
+  const parts=[want.b&&'Gebäude',want.t&&'Gelände',want.a&&'Luftbild'].filter(Boolean);
+  const say=t=>mStat(t); say(`Lade ${parts.join(', ')} …`);
+  const [rb,rt,ra]=await Promise.allSettled([want.b?fetchBuildings(lat,lon,r,say):null,want.t?fetchTerrain(lat,lon,r):null,want.a?fetchAerial(lat,lon,r):null]);
+  const fails=[];
+  if(want.b&&rb.status==='rejected')fails.push('Gebäude: '+rb.reason.message);
+  if(want.t&&rt.status==='rejected')fails.push('Gelände: '+rt.reason.message);
+  if(want.a&&ra.status==='rejected')fails.push('Luftbild: '+ra.reason.message);
+  const B=rb.status==='fulfilled'?rb.value:null, Tr=rt.status==='fulfilled'?rt.value:null, A=ra.status==='fulfilled'?ra.value:null;
+  if(!B&&!Tr&&!A){mStat(fails.join(' '),true);go.disabled=false;$('#mEmpty').disabled=false;return;}
+  applySite({lat,lon,place:mPt.name||'Gewählter Standort',B,Tr,A,asNew:$('#mTarget').value==='new'});
+  const got=[B&&`${B.list.length} Gebäude (${B.src})`,Tr&&'Gelände',A&&'Luftbild'].filter(Boolean).join(', ');
+  go.disabled=false; $('#mEmpty').disabled=false; dlgMap.close();
+  const own=B&&B.list.some(b=>b.own);
+  toast(`Geladen: ${got}.`+(fails.length?' Nicht geladen: '+fails.join(' '):'')+(B&&!own?' Tippe dein Haus in der Szene an und markiere es als eigenes Haus.':' Verschiebe jetzt die PV-Module an die richtige Stelle.'),fails.length?9000:6000);
+});
+
+function applySite({lat,lon,place,B,Tr,A,asNew}){
+  let p;
+  if(asNew){flushSave();p=defaults();p.name=String(place).slice(0,40);p.objects=[];p.aerial=null;p.nextId=1;}
+  else p=P;
+  const fresh=asNew||isDemo(p);
+  if(fresh&&!asNew){p.objects=[];if(p.name==='Mein Projekt')p.name=String(place).slice(0,40);}
+  p.lat=lat; p.lon=lon; p.place=place;
+  const drop=o=>(B&&(o.type==='lod2'||o.type==='building'))||(Tr&&o.type==='terrain');
+  p.objects=p.objects.filter(o=>!drop(o));
+  let nid=p.objects.reduce((m,o)=>Math.max(m,+o.id||0),0)+1;
+  if(Tr){Tr.id=nid++;p.objects.unshift(Tr);}
+  if(B)for(const b of B.list){b.id=nid++;p.objects.push(b);}
+  if(fresh){const own=B&&B.list.find(b=>b.own);
+    p.objects.push({id:nid++,type:'pv',name:'PV-Module',x:own?own.x:0,z:own?own.z:0,elev:own?Math.round((own.h+0.2)*10)/10:0.5,az:180,tilt:35,n:4,orient:'hoch',wp:430,vis:true});}
+  p.nextId=nid;
+  if(A){const id=hashStr(A.data); if(lsSet(IKEY(id),A.data))p.aerial={img:id,w:A.w,x:0,z:0,rot:A.rot,op:1,vis:true};}
+  if(asNew)addProject(p); else{flushSave();applyProject(p);}
+  gcImages();
+  cam.tx=0;cam.tz=0;cam.ty=2;cam.dist=95;cam.phi=0.9;placeCam();
+}
+async function newEmptyProject(){
+  const n=await askName('Neues Projekt','Das neue Projekt startet am gleichen Standort mit zwei Modulen und ohne Umgebung. Für eine Variante mit geladener Umgebung nutze Duplizieren.','Projekt '+(idx.list.length+1)); if(!n)return;
+  const d=defaults(); d.name=n; d.lat=P.lat; d.lon=P.lon; d.place=P.place; d.tz=P.tz; d.objects=d.objects.filter(o=>o.type==='pv'); addProject(d); toast(`Projekt „${n}“ angelegt.`);
+}
 
 window.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'))e.preventDefault();});
 window.addEventListener('drop',e=>{if(!e.dataTransfer||!e.dataTransfer.files.length)return;e.preventDefault();const f=[...e.dataTransfer.files].filter(x=>/\.(gml|xml)$/i.test(x.name));if(f.length)openImport(f);else toast('Ziehe eine LoD2-Datei im Format .gml in die Szene.');});
@@ -1236,7 +1432,7 @@ function loop(t){
 }
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();drawDay();drawHeat();req();}
 new ResizeObserver(resize).observe($('#app'));
-function retheme(){applyTheme();if(grid)grid.visible=!(P.aerial&&P.aerial.vis);rebuildAll();labels.forEach(l=>setLabel(l,l.userData.text,true));tickMat.color.setHex(isDark()?0x9aaebe:0x566b7e);ringMat.color.setHex(T.ring);drawDay();drawHeat();req();}
+function retheme(){applyTheme();rebuildAll();labels.forEach(l=>setLabel(l,l.userData.text,true));tickMat.color.setHex(isDark()?0x9aaebe:0x566b7e);ringMat.color.setHex(T.ring);drawDay();drawHeat();req();}
 if(mq.addEventListener)mq.addEventListener('change',retheme);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{labels.forEach(l=>setLabel(l,l.userData.text,true));drawDay();req();});
 

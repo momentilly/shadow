@@ -1,0 +1,9 @@
+{
+  "name": "schattenlauf",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "earcut": "3.0.1"
+  }
+}
