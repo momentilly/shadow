@@ -8,6 +8,7 @@ Plane die Verschattung von PV-Modulen in 3D. Wähle dein Haus auf der Karte, und
 - 3D-Gebäude im Umkreis von 100, 150 oder 250 m laden
 - Gelände aus dem Höhenmodell laden, Gebäude stehen auf der richtigen Höhe
 - Luftbild automatisch nordausgerichtet über das Gelände legen
+- Luftbild auch auf den Dächern, um Gauben, Dachfenster und Schornsteine zu sehen; rund um das gewählte Haus in fast voller Auflösung von 10 cm
 - PV-Module, Bäume und eigene Gebäude platzieren und bearbeiten
 - Sonnenbahn, Schattenwurf und PV-Leistung im Tagesverlauf
 - Jahresanalyse mit Heatmap und Vergleich mehrerer Projektvarianten

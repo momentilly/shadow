@@ -242,6 +242,7 @@ dialog .locg{margin-top:0}
             <button class="btn" id="aerAlign" aria-pressed="false">Ausrichten per Ziehen</button>
           </div>
           <label class="chk"><input type="checkbox" id="aerVis">Luftbild anzeigen</label>
+          <label class="chk"><input type="checkbox" id="aerRoofs">Luftbild auf Dächern</label>
           <button class="btn warn" id="aerDel">Luftbild entfernen</button>
         </div>
       </details>
@@ -476,7 +477,7 @@ function sanitize(p){
   const d=defaults(); if(!p||!Array.isArray(p.objects))return d;
   const out=Object.assign(d,{name:String(p.name||'Projekt').slice(0,40),lat:+p.lat||d.lat,lon:+p.lon||d.lon,place:String(p.place||''),tz:['eu','0','1','2'].includes(String(p.tz))?String(p.tz):'eu'});
   out.objects=p.objects.filter(o=>o&&['building','tree','pv','lod2','terrain'].includes(o.type)).map(o=>Object.assign({vis:true,name:'Objekt'},o));
-  const a=p.aerial; out.aerial=a&&a.img?{img:String(a.img),w:clamp(+a.w||200,5,3000),x:+a.x||0,z:+a.z||0,rot:clamp(+a.rot||0,-180,180),op:clamp(+a.op||1,0.1,1),vis:a.vis!==false}:null;
+  const a=p.aerial; out.aerial=a&&a.img?{img:String(a.img),w:clamp(+a.w||200,5,3000),x:+a.x||0,z:+a.z||0,rot:clamp(+a.rot||0,-180,180),op:clamp(+a.op||1,0.1,1),vis:a.vis!==false,roofs:a.roofs!==false,detail:a.detail&&a.detail.img?{img:String(a.detail.img),w:clamp(+a.detail.w||120,5,1000)}:null}:null;
   out.nextId=out.objects.reduce((m,o)=>Math.max(m,+o.id||0),0)+1; return out;
 }
 /* Projekte im Browser speichern */
@@ -571,6 +572,23 @@ function syncGround(){
   ground.position.y=rg?rg.min-0.4:0;
   if(grid)grid.visible=!t&&!(P.aerial&&P.aerial.vis);
 }
+/* Luftbild auf den Dächern: Draufsicht-Projektion, Detailbild wo vorhanden */
+let roofReT=null;
+function roofsLater(){clearTimeout(roofReT);roofReT=setTimeout(()=>{rebuildAll();},250);}
+function roofTex(o){
+  const a=P.aerial; if(!a||!a.vis||a.roofs===false||alignMode)return null;
+  const pts=[o.roofs,o.flats].filter(Boolean); if(!pts.some(x=>x.length>=9))return null;
+  const g=-a.rot*DEG,c=Math.cos(g),sn=Math.sin(g);
+  const inside=w=>{for(const arr of pts)for(let i=0;i<arr.length;i+=3){const dx=o.x+arr[i]-a.x,dz=o.z+arr[i+2]-a.z,lx=dx*c-dz*sn,lz=dx*sn+dz*c;if(Math.abs(lx)>w/2||Math.abs(lz)>w/2)return false;}return true;};
+  if(a.detail&&inside(a.detail.w)){const t=getTex(a.detail.img,roofsLater);if(t)return{tex:t,w:a.detail.w,h:a.detail.w*t.image.height/t.image.width};}
+  const t=getTex(a.img,roofsLater); if(!t)return null;
+  return{tex:t,w:a.w,h:a.w*t.image.height/t.image.width};
+}
+function roofUV(o,arr,rt){
+  const a=P.aerial,g=-a.rot*DEG,c=Math.cos(g),sn=Math.sin(g),uv=new Float32Array(arr.length/3*2);
+  for(let i=0,j=0;i<arr.length;i+=3,j+=2){const dx=o.x+arr[i]-a.x,dz=o.z+arr[i+2]-a.z;uv[j]=(dx*c-dz*sn)/rt.w+0.5;uv[j+1]=0.5-(dx*sn+dz*c)/rt.h;}
+  return uv;
+}
 function panelDims(o){return o.orient==='quer'?{pw:1.722,ph:1.134}:{pw:1.134,ph:1.722};}
 function buildObject(o){
   const g=new THREE.Group(); g.userData.id=o.id;
@@ -591,7 +609,10 @@ function buildObject(o){
     g.position.set(o.x,objY(o),o.z);
   }else if(o.type==='lod2'){
     const mk=(arr,color)=>{if(!arr||arr.length<9)return;const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));geo.computeVertexNormals();add(geo,color,{side:THREE.DoubleSide,flatShading:true});};
-    mk(o.walls,o.own?T.own:T.wall); mk(o.roofs,T.roof); mk(o.flats,o.src==='osm'?T.roof:T.flat);
+    const rt=roofTex(o);
+    if(rt){const mt=arr=>{if(!arr||arr.length<9)return;const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(roofUV(o,arr,rt),2));geo.computeVertexNormals();add(geo,0xffffff,{map:rt.tex,side:THREE.DoubleSide,flatShading:true,roughness:.9});};
+      mk(o.walls,o.own?T.own:T.wall); mt(o.roofs); mt(o.flats);}
+    else{mk(o.walls,o.own?T.own:T.wall); mk(o.roofs,T.roof); mk(o.flats,o.src==='osm'?T.roof:T.flat);}
     g.position.set(o.x,objY(o),o.z);
   }else if(o.type==='terrain'){
     const hd=terrainData(o); if(!hd)return g;
@@ -779,7 +800,7 @@ canvas.addEventListener('pointermove',e=>{
 function endPtr(e){
   ptrs.delete(e.pointerId);
   if(mode==='pinch'){if(ptrs.size<2){mode=null;st=null;}return;}
-  if(mode==='imgdrag'){if(moved)save();}
+  if(mode==='imgdrag'){if(moved){save();roofsLater();}}
   else if(mode==='drag'&&moved){refreshPV();markDirty();save();updateListMeta();}
   else if(!moved&&(mode==='orbit'||mode==='drag')){if(downHit!==null)select(downHit);else select(null);}
   mode=null; st=null; canvas.style.cursor='grab';
@@ -990,7 +1011,7 @@ $('#tz').addEventListener('change',e=>{P.tz=e.target.value;onLocation();});
 /* Projekt kopieren, einfügen, zurücksetzen */
 const dlg=$('#dlg');
 $('#btnExport').addEventListener('click',async()=>{
-  const ex=Object.assign({},P); if(P.aerial&&P.aerial.img){const d=lsGet(IKEY(P.aerial.img));if(d)ex.aerialData=d;}
+  const ex=Object.assign({},P); if(P.aerial&&P.aerial.img){const d=lsGet(IKEY(P.aerial.img));if(d)ex.aerialData=d;if(P.aerial.detail){const dd=lsGet(IKEY(P.aerial.detail.img));if(dd)ex.detailData=dd;}}
   const txt=JSON.stringify(ex); $('#dlgT').textContent='Projekt kopieren'; $('#dlgTx').value=txt; $('#dlgOk').hidden=true;
   let ok=false; try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){}
   $('#dlgP').textContent=ok?'Das Projekt liegt in deiner Zwischenablage. Speichere den Text, um es später wieder einzufügen.':'Markiere den Text und kopiere ihn, um das Projekt zu sichern.';
@@ -999,7 +1020,7 @@ $('#btnExport').addEventListener('click',async()=>{
 $('#btnImport').addEventListener('click',()=>{$('#dlgT').textContent='Projekt einfügen';$('#dlgP').textContent='Füge den kopierten Projekttext ein. Er wird als neues Projekt angelegt.';$('#dlgTx').value='';$('#dlgOk').hidden=false;dlg.returnValue='';dlg.showModal();});
 dlg.addEventListener('close',()=>{
   if(dlg.returnValue!=='ok'||$('#dlgOk').hidden)return;
-  try{const p=JSON.parse($('#dlgTx').value);if(!p||!Array.isArray(p.objects))throw 0;if(p.aerial&&p.aerial.img&&typeof p.aerialData==='string'&&p.aerialData.startsWith('data:image/'))lsSet(IKEY(String(p.aerial.img)),p.aerialData);const q=sanitize(p);q.name=(q.name||'Projekt')+' (eingefügt)';addProject(q);toast('Das Projekt wurde als neues Projekt eingefügt.');}
+  try{const p=JSON.parse($('#dlgTx').value);if(!p||!Array.isArray(p.objects))throw 0;if(p.aerial&&p.aerial.img&&typeof p.aerialData==='string'&&p.aerialData.startsWith('data:image/'))lsSet(IKEY(String(p.aerial.img)),p.aerialData);if(p.aerial&&p.aerial.detail&&p.aerial.detail.img&&typeof p.detailData==='string'&&p.detailData.startsWith('data:image/'))lsSet(IKEY(String(p.aerial.detail.img)),p.detailData);const q=sanitize(p);q.name=(q.name||'Projekt')+' (eingefügt)';addProject(q);toast('Das Projekt wurde als neues Projekt eingefügt.');}
   catch(e){$('#dlgP').textContent='Der Text ist kein gültiges Schattenlauf-Projekt. Prüfe, ob er vollständig kopiert wurde.';dlg.showModal();}
 });
 let resetArm=null;
@@ -1082,15 +1103,19 @@ function rebuildAerial(){
   const a=P.aerial; renderAerUI();
   syncGround();
   if(!a)return;
-  const tex=getTex(a.img,rebuildAerial);
+  const tex=getTex(a.img,()=>{rebuildAerial();roofsLater();});
   if(!tex){if(!lsGet(IKEY(a.img)))$('#aerHint').textContent='Das Luftbild dieses Projekts ist in diesem Browser nicht gespeichert. Lade es erneut.';req();return;}
   const h=a.w*tex.image.height/tex.image.width;
-  const t=terrainObj(), seg=t?Math.min(256,Math.ceil(a.w/1.5)):1, geo=new THREE.PlaneGeometry(a.w,h,seg,t?Math.min(256,Math.ceil(h/1.5)):1); geo.rotateX(-Math.PI/2);
-  if(t){const pos=geo.attributes.position,g=-a.rot*DEG,c=Math.cos(g),s=Math.sin(g);
-    for(let i=0;i<pos.count;i++){const lx=pos.getX(i),lz=pos.getZ(i);pos.setY(i,groundY(a.x+lx*c+lz*s,a.z-lx*s+lz*c)+0.05);}
-    geo.computeVertexNormals();}
-  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:tex,roughness:1,metalness:0,transparent:a.op<1,opacity:a.op,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+  const t=terrainObj();
+  const plane=(w,hh,lift,off)=>{const geo=new THREE.PlaneGeometry(w,hh,t?Math.min(256,Math.ceil(w/1.5)):1,t?Math.min(256,Math.ceil(hh/1.5)):1); geo.rotateX(-Math.PI/2);
+    const pos=geo.attributes.position,g=-a.rot*DEG,c=Math.cos(g),s=Math.sin(g);
+    for(let i=0;i<pos.count;i++){const lx=pos.getX(i),lz=pos.getZ(i);pos.setY(i,(t?groundY(a.x+lx*c+lz*s,a.z-lx*s+lz*c):0)+lift);}
+    geo.computeVertexNormals(); return geo;};
+  const mat=tx=>new THREE.MeshStandardMaterial({map:tx,roughness:1,metalness:0,transparent:a.op<1,opacity:a.op,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  const mesh=new THREE.Mesh(plane(a.w,h,t?0.05:0,0),mat(tex));
   mesh.receiveShadow=true;
+  const dtex=a.detail&&getTex(a.detail.img,()=>{rebuildAerial();roofsLater();});
+  if(dtex){const dm=new THREE.Mesh(plane(a.detail.w,a.detail.w*dtex.image.height/dtex.image.width,t?0.08:0.02,1),mat(dtex));dm.material.polygonOffsetFactor=-3;dm.material.polygonOffsetUnits=-3;dm.receiveShadow=true;dm.renderOrder=1;mesh.add(dm);}
   aerialGroup=new THREE.Group(); aerialGroup.add(mesh); aerialGroup.position.set(a.x,0.03,a.z); aerialGroup.rotation.y=-a.rot*DEG; aerialGroup.visible=a.vis;
   scene.add(aerialGroup); req();
 }
@@ -1099,7 +1124,8 @@ function renderAerUI(){
   const a=P.aerial; $('#aerCtl').hidden=!a; $('#aerLoadTxt').textContent=a?'Anderes Luftbild laden':'Luftbild laden';
   $('#aerHint').textContent=a?'Passt das Luftbild nicht genau zu den Gebäuden, wechsle in die Draufsicht und schalte „Ausrichten per Ziehen“ ein. Mit der Bildbreite stellst du den Maßstab ein.':'Lade einen Screenshot mit Norden oben, zum Beispiel aus TIM-online oder dem Geoportal NRW mit eingeschaltetem Luftbild. Danach richtest du ihn in der Draufsicht an den Gebäuden aus.';
   const box=$('#aerFields'); box.innerHTML=''; if(!a)return;
-  for(const f of AER_F)box.appendChild(field(a,f,()=>{rebuildAerial();save();},'a-'));
+  for(const f of AER_F)box.appendChild(field(a,f,()=>{rebuildAerial();roofsLater();save();},'a-'));
+  $('#aerRoofs').checked=a.roofs!==false;
   $('#aerVis').checked=a.vis;
 }
 function syncAerFields(){if(!P.aerial)return;for(const k of['x','z']){const row=document.querySelector(`#aerFields .fld[data-k="${k}"]`);if(row)row.querySelectorAll('input').forEach(i=>i.value=P.aerial[k]);}}
@@ -1109,7 +1135,7 @@ function setAlign(on,silent){
 }
 function topView(){cam.phi=0.02;cam.theta=0;cam.dist=Math.max(cam.dist,80);placeCam();}
 function gcImages(){
-  const used=new Set(); for(const e of idx.list){const r=lsGet(PKEY(e.id));if(!r)continue;try{const q=JSON.parse(r);if(q.aerial&&q.aerial.img)used.add(String(q.aerial.img));}catch(err){}}
+  const used=new Set(); for(const e of idx.list){const r=lsGet(PKEY(e.id));if(!r)continue;try{const q=JSON.parse(r);if(q.aerial&&q.aerial.img)used.add(String(q.aerial.img));if(q.aerial&&q.aerial.detail&&q.aerial.detail.img)used.add(String(q.aerial.detail.img));}catch(err){}}
   const keys=[]; if(LS_OK){try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('schattenlauf-img-'))keys.push(k);}}catch(err){}}
   for(const k of Object.keys(MEM))if(k.startsWith('schattenlauf-img-')&&!keys.includes(k))keys.push(k);
   for(const k of keys){const id=k.slice('schattenlauf-img-'.length);if(!used.has(id)){lsDel(k);texCache.delete(id);}}
@@ -1121,16 +1147,17 @@ $('#aerFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; e.target.value=''; if(!f)return;
   try{
     const url=await downscale(f,2048), id=hashStr(url); lsSet(IKEY(id),url);
-    const old=P.aerial; P.aerial={img:id,w:old?old.w:200,x:old?old.x:0,z:old?old.z:0,rot:old?old.rot:0,op:old?old.op:1,vis:true};
+    const old=P.aerial; P.aerial={img:id,w:old?old.w:200,x:old?old.x:0,z:old?old.z:0,rot:old?old.rot:0,op:old?old.op:1,vis:true,roofs:old?old.roofs!==false:true,detail:null};
     flushSave(); gcImages(); rebuildAerial(); topView(); if(!alignMode)setAlign(true);
   }catch(err){toast('Das Bild konnte nicht gelesen werden. Nutze ein PNG oder JPG.');}
 });
 $('#aerTop').addEventListener('click',topView);
 $('#aerAlign').addEventListener('click',()=>{setAlign(!alignMode);if(alignMode)topView();});
-$('#aerVis').addEventListener('change',e=>{if(!P.aerial)return;P.aerial.vis=e.target.checked;rebuildAerial();save();});
+$('#aerVis').addEventListener('change',e=>{if(!P.aerial)return;P.aerial.vis=e.target.checked;rebuildAerial();rebuildAll();save();});
+$('#aerRoofs').addEventListener('change',e=>{if(!P.aerial)return;P.aerial.roofs=e.target.checked;rebuildAll();save();});
 let aerDelArm=null;
 $('#aerDel').addEventListener('click',e=>{const b=e.currentTarget;if(!aerDelArm){b.textContent='Wirklich entfernen?';aerDelArm=setTimeout(()=>{b.textContent='Luftbild entfernen';aerDelArm=null;},3000);return;}
-  clearTimeout(aerDelArm);aerDelArm=null;b.textContent='Luftbild entfernen';P.aerial=null;if(alignMode)setAlign(false,true);flushSave();gcImages();rebuildAerial();});
+  clearTimeout(aerDelArm);aerDelArm=null;b.textContent='Luftbild entfernen';P.aerial=null;if(alignMode)setAlign(false,true);flushSave();gcImages();rebuildAerial();rebuildAll();});
 
 /* ---------- LoD2-Import ---------- */
 const LOD2_BASE='https://www.opengeodata.nrw.de/produkte/geobasis/3dg/lod2_gml/lod2_gml/';
@@ -1307,7 +1334,10 @@ async function fetchAerial(lat,lon,r){
   const url=`${DOP_WMS}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=nw_dop_rgb&STYLES=&CRS=EPSG:25832&BBOX=${(u.E-hs).toFixed(1)},${(u.N-hs).toFixed(1)},${(u.E+hs).toFixed(1)},${(u.N+hs).toFixed(1)}&WIDTH=2048&HEIGHT=2048&FORMAT=image/jpeg`;
   const res=await fetch(url); if(!res.ok||!/^image\//.test(res.headers.get('content-type')||''))throw new Error('Das Luftbild ist gerade nicht verfügbar.');
   const data=await downscale(await res.blob(),1600);
-  return{data,w:size,rot:Math.round(gridConv(lat,lon)/DEG*100)/100};
+  const dw=120,dh=dw/2; let detail=null;
+  try{const dr=await fetch(`${DOP_WMS}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=nw_dop_rgb&STYLES=&CRS=EPSG:25832&BBOX=${(u.E-dh).toFixed(2)},${(u.N-dh).toFixed(2)},${(u.E+dh).toFixed(2)},${(u.N+dh).toFixed(2)}&WIDTH=1200&HEIGHT=1200&FORMAT=image/jpeg`);
+    if(dr.ok&&/^image\//.test(dr.headers.get('content-type')||''))detail={data:await downscale(await dr.blob(),1200),w:dw};}catch(e){}
+  return{data,w:size,rot:Math.round(gridConv(lat,lon)/DEG*100)/100,detail};
 }
 
 /* Karte */
@@ -1390,7 +1420,8 @@ function applySite({lat,lon,place,B,Tr,A,asNew}){
   if(fresh){const own=B&&B.list.find(b=>b.own);
     p.objects.push({id:nid++,type:'pv',name:'PV-Module',x:own?own.x:0,z:own?own.z:0,elev:own?Math.round((own.h+0.2)*10)/10:0.5,az:180,tilt:35,n:4,orient:'hoch',wp:430,vis:true});}
   p.nextId=nid;
-  if(A){const id=hashStr(A.data); if(lsSet(IKEY(id),A.data))p.aerial={img:id,w:A.w,x:0,z:0,rot:A.rot,op:1,vis:true};}
+  if(A){const id=hashStr(A.data); if(lsSet(IKEY(id),A.data)){p.aerial={img:id,w:A.w,x:0,z:0,rot:A.rot,op:1,vis:true,roofs:true,detail:null};
+    if(A.detail){const did=hashStr(A.detail.data);if(lsSet(IKEY(did),A.detail.data))p.aerial.detail={img:did,w:A.detail.w};}}}
   if(asNew)addProject(p); else{flushSave();applyProject(p);}
   gcImages();
   cam.tx=0;cam.tz=0;cam.ty=2;cam.dist=95;cam.phi=0.9;placeCam();
